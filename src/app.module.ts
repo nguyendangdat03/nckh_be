@@ -4,6 +4,10 @@ import { UsersModule } from './users/users.module';
 import { AdvisorsModule } from './advisors/advisors.module';
 import { User } from './entities/user.entity';
 import { Advisor } from './entities/advisor.entity';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { ExcelModule } from './excel/excel.module';
+import { MinioModule } from './minio/minio.module';
 
 @Module({
   imports: [
@@ -19,6 +23,10 @@ import { Advisor } from './entities/advisor.entity';
     }),
     UsersModule,
     AdvisorsModule,
+    ExcelModule,
+    MinioModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
