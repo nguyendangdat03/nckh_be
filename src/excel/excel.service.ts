@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { MinioService } from '../minio/minio.service';
 import * as XLSX from 'xlsx';
+import { ExcelFile } from './interfaces/excel-file.interface';
 
 @Injectable()
 export class ExcelService {
@@ -8,7 +9,7 @@ export class ExcelService {
 
   async getAllExcelFiles(bucketName: string) {
     try {
-      const files = await this.minioService.listAllFiles(bucketName);
+      const files = await this.minioService.listFiles(bucketName);
 
       // Lọc chỉ lấy các file có định dạng Excel (.xlsx hoặc .xls)
       const excelFiles = files.filter(
@@ -39,28 +40,24 @@ export class ExcelService {
   }
 
   async processExcelFile(file: Express.Multer.File, bucketName: string) {
-    try {
-      const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
 
-      // Upload file to MinIO
-      const objectName = `${Date.now()}-${file.originalname}`;
-      await this.minioService.uploadFile(bucketName, objectName, file.buffer);
+    const fileName = `${Date.now()}-${file.originalname}`;
+    await this.minioService.uploadFile(bucketName, fileName, file.buffer);
 
-      return {
-        fileName: objectName,
-        data: jsonData,
-      };
-    } catch (error) {
-      throw new Error(`Error processing Excel file: ${error.message}`);
-    }
+    return {
+      fileName,
+      data,
+    };
   }
 
   async getExcelData(bucketName: string, objectName: string) {
     try {
       // Download file from MinIO
-      const fileBuffer = await this.minioService.downloadFile(
+      const fileBuffer = await this.minioService.getFile(
         bucketName,
         objectName,
       );
@@ -88,7 +85,7 @@ export class ExcelService {
   ) {
     try {
       // Download file from MinIO
-      const fileBuffer = await this.minioService.downloadFile(
+      const fileBuffer = await this.minioService.getFile(
         bucketName,
         objectName,
       );
@@ -119,43 +116,33 @@ export class ExcelService {
     objectName: string,
     newData: any[],
   ) {
-    try {
-      // Download existing file
-      const fileBuffer = await this.minioService.downloadFile(
-        bucketName,
-        objectName,
-      );
-
-      // Update Excel content
-      const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = XLSX.utils.json_to_sheet(newData);
-      workbook.Sheets[sheetName] = worksheet;
-
-      // Convert back to buffer
-      const updatedBuffer = XLSX.write(workbook, {
-        type: 'buffer',
-        bookType: 'xlsx',
-      });
-
-      // Upload updated file
-      await this.minioService.uploadFile(bucketName, objectName, updatedBuffer);
-
-      return {
-        fileName: objectName,
-        data: newData,
-      };
-    } catch (error) {
-      throw new Error(`Error updating Excel file: ${error.message}`);
-    }
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(newData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    await this.minioService.uploadFile(bucketName, objectName, buffer);
+    return { message: 'File đã được cập nhật thành công' };
   }
 
-  async deleteExcelFile(bucketName: string, objectName: string) {
-    try {
-      await this.minioService.deleteFile(bucketName, objectName);
-      return { message: 'File deleted successfully' };
-    } catch (error) {
-      throw new Error(`Error deleting Excel file: ${error.message}`);
-    }
+  async deleteFile(bucketName: string, objectName: string) {
+    await this.minioService.deleteFile(bucketName, objectName);
+    return { message: 'File đã được xóa thành công' };
+  }
+
+  async listFiles(bucketName: string): Promise<ExcelFile[]> {
+    const files = await this.minioService.listFiles(bucketName);
+    return files.map((file) => ({
+      name: file.name,
+      size: file.size,
+      lastModified: file.lastModified,
+    }));
+  }
+
+  async getFileData(bucketName: string, objectName: string) {
+    const fileBuffer = await this.minioService.getFile(bucketName, objectName);
+    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    return XLSX.utils.sheet_to_json(worksheet);
   }
 }
