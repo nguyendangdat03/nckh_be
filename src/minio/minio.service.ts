@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import * as Minio from 'minio';
+import { Client } from 'minio';
 
 interface FileItem {
   name: string;
@@ -9,12 +9,12 @@ interface FileItem {
 
 @Injectable()
 export class MinioService implements OnModuleInit {
-  private minioClient: Minio.Client;
+  private minioClient: Client;
   private defaultBucket = 'excel-bucket';
 
   constructor() {
-    this.minioClient = new Minio.Client({
-      endPoint: '127.0.0.1',
+    this.minioClient = new Client({
+      endPoint: 'localhost',
       port: 9000,
       useSSL: false,
       accessKey: 'minioadmin',
@@ -39,7 +39,7 @@ export class MinioService implements OnModuleInit {
     }
   }
 
-  async listAllFiles(bucketName: string, prefix = ''): Promise<FileItem[]> {
+  async listFiles(bucketName: string, prefix = ''): Promise<FileItem[]> {
     try {
       await this.ensureBucketExists(bucketName);
 
@@ -72,50 +72,22 @@ export class MinioService implements OnModuleInit {
     }
   }
 
-  async uploadFile(
-    bucketName: string,
-    objectName: string,
-    file: Buffer,
-  ): Promise<string> {
-    await this.ensureBucketExists(bucketName);
-
-    const metaData = {
-      'Content-Type':
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    };
-
-    await this.minioClient.putObject(
-      bucketName,
-      objectName,
-      file,
-      file.length,
-      metaData,
-    );
-    return objectName;
+  async uploadFile(bucketName: string, objectName: string, fileBuffer: Buffer) {
+    await this.minioClient.putObject(bucketName, objectName, fileBuffer);
   }
 
-  async downloadFile(bucketName: string, objectName: string): Promise<Buffer> {
-    try {
-      await this.ensureBucketExists(bucketName);
+  async getFile(bucketName: string, objectName: string) {
+    const stream = await this.minioClient.getObject(bucketName, objectName);
+    const chunks: Buffer[] = [];
 
-      const dataStream = await this.minioClient.getObject(
-        bucketName,
-        objectName,
-      );
-      const chunks: Buffer[] = [];
-
-      return new Promise((resolve, reject) => {
-        dataStream.on('data', (chunk) => chunks.push(chunk));
-        dataStream.on('end', () => resolve(Buffer.concat(chunks)));
-        dataStream.on('error', reject);
-      });
-    } catch (error) {
-      throw new Error(`Error downloading file: ${error.message}`);
+    for await (const chunk of stream) {
+      chunks.push(chunk);
     }
+
+    return Buffer.concat(chunks);
   }
 
-  async deleteFile(bucketName: string, objectName: string): Promise<void> {
-    await this.ensureBucketExists(bucketName);
+  async deleteFile(bucketName: string, objectName: string) {
     await this.minioClient.removeObject(bucketName, objectName);
   }
 }

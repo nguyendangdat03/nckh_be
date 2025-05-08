@@ -7,18 +7,31 @@ import {
   Put,
   Delete,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '../auth/roles.enum';
 
 @ApiTags('users')
 @Controller('users')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
+  @Roles(Role.ADMIN, Role.ADVISOR)
   @ApiOperation({ summary: 'Lấy danh sách người dùng' })
   @ApiResponse({ status: 200, description: 'Thành công', type: [User] })
   findAll(): Promise<User[]> {
@@ -26,6 +39,7 @@ export class UsersController {
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN, Role.ADVISOR)
   @ApiOperation({ summary: 'Lấy thông tin một người dùng' })
   @ApiResponse({ status: 200, description: 'Thành công', type: User })
   findOne(@Param('id') id: number): Promise<User> {
@@ -33,6 +47,7 @@ export class UsersController {
   }
 
   @Post()
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Tạo người dùng mới' })
   @ApiResponse({ status: 201, description: 'Tạo thành công', type: User })
   create(@Body() createUserDto: CreateUserDto): Promise<User> {
@@ -40,6 +55,7 @@ export class UsersController {
   }
 
   @Put(':id')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Cập nhật thông tin người dùng' })
   @ApiResponse({ status: 200, description: 'Cập nhật thành công', type: User })
   update(
@@ -50,6 +66,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   @HttpCode(204)
   @ApiOperation({ summary: 'Xóa người dùng' })
   @ApiResponse({ status: 204, description: 'Xóa thành công' })

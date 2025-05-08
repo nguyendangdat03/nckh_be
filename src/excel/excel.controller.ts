@@ -9,6 +9,7 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExcelService } from './excel.service';
@@ -20,49 +21,23 @@ import {
   ApiParam,
   ApiQuery,
   ApiResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '../auth/roles.enum';
+import { ExcelFile } from './interfaces/excel-file.interface';
 
 @ApiTags('Excel')
 @Controller('excel')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth()
 export class ExcelController {
   constructor(private readonly excelService: ExcelService) {}
 
-  @Get('files')
-  @ApiOperation({ summary: 'Lấy danh sách tất cả file Excel' })
-  @ApiResponse({
-    status: 200,
-    description: 'Danh sách file Excel',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          name: {
-            type: 'string',
-            example: '1647824937123-example.xlsx',
-          },
-          size: {
-            type: 'string',
-            example: '24.5 KB',
-          },
-          uploadDate: {
-            type: 'string',
-            format: 'date-time',
-          },
-          url: {
-            type: 'string',
-            example: '/excel/1647824937123-example.xlsx',
-          },
-        },
-      },
-    },
-  })
-  async getAllFiles() {
-    const bucketName = 'excel-bucket';
-    return await this.excelService.getAllExcelFiles(bucketName);
-  }
-
   @Post('upload')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Upload file Excel' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -103,46 +78,58 @@ export class ExcelController {
     return await this.excelService.processExcelFile(file, bucketName);
   }
 
+  @Get()
+  @Roles(Role.ADMIN, Role.ADVISOR, Role.STUDENT)
+  @ApiOperation({ summary: 'Lấy danh sách file Excel' })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách file Excel',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            example: 'example.xlsx',
+          },
+          size: {
+            type: 'number',
+            example: 1024,
+          },
+          lastModified: {
+            type: 'string',
+            example: '2024-03-20T10:00:00Z',
+          },
+        },
+      },
+    },
+  })
+  async listFiles(): Promise<ExcelFile[]> {
+    const bucketName = 'excel-bucket';
+    return await this.excelService.listFiles(bucketName);
+  }
+
   @Get(':objectName')
+  @Roles(Role.ADMIN, Role.ADVISOR, Role.STUDENT)
   @ApiOperation({ summary: 'Lấy dữ liệu từ file Excel' })
   @ApiParam({
     name: 'objectName',
     description: 'Tên file Excel trong MinIO',
-    example: '1647824937123-example.xlsx',
   })
   @ApiResponse({
     status: 200,
     description: 'Dữ liệu từ file Excel',
     schema: {
-      type: 'object',
-      properties: {
-        fileName: {
-          type: 'string',
-          example: '1647824937123-example.xlsx',
-        },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-          },
-        },
-        sheets: {
-          type: 'array',
-          items: {
-            type: 'string',
-          },
-          example: ['Sheet1', 'Sheet2'],
-        },
-        totalRows: {
-          type: 'number',
-          example: 100,
-        },
+      type: 'array',
+      items: {
+        type: 'object',
       },
     },
   })
-  async getExcelData(@Param('objectName') objectName: string) {
+  async getFileData(@Param('objectName') objectName: string) {
     const bucketName = 'excel-bucket';
-    return await this.excelService.getExcelData(bucketName, objectName);
+    return await this.excelService.getFileData(bucketName, objectName);
   }
 
   @Get(':objectName/sheet')
@@ -169,6 +156,7 @@ export class ExcelController {
   }
 
   @Put(':objectName')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Cập nhật dữ liệu file Excel' })
   @ApiParam({
     name: 'objectName',
@@ -196,13 +184,18 @@ export class ExcelController {
   }
 
   @Delete(':objectName')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Xóa file Excel' })
   @ApiParam({
     name: 'objectName',
     description: 'Tên file Excel trong MinIO',
   })
+  @ApiResponse({
+    status: 200,
+    description: 'File đã được xóa thành công',
+  })
   async deleteFile(@Param('objectName') objectName: string) {
     const bucketName = 'excel-bucket';
-    return await this.excelService.deleteExcelFile(bucketName, objectName);
+    return await this.excelService.deleteFile(bucketName, objectName);
   }
 }

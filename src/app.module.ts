@@ -8,6 +8,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ExcelModule } from './excel/excel.module';
 import { MinioModule } from './minio/minio.module';
+import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -18,13 +20,15 @@ import { MinioModule } from './minio/minio.module';
       username: 'root',
       password: '',
       database: 'nckh',
-      entities: [User, Advisor],
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
     UsersModule,
     AdvisorsModule,
     ExcelModule,
     MinioModule,
+    AuthModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
