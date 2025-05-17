@@ -10,9 +10,14 @@ import { ExcelModule } from './excel/excel.module';
 import { MinioModule } from './minio/minio.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
+import { MailModule } from './mail/mail.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: 'localhost',
@@ -29,6 +34,7 @@ import { ChatModule } from './chat/chat.module';
     MinioModule,
     AuthModule,
     ChatModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
