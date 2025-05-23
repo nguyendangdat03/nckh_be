@@ -1,8 +1,9 @@
-import { Controller, Post, Body, HttpCode } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginUserDto } from '../users/dto/login-user.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -30,5 +31,20 @@ export class AuthController {
   })
   login(@Body() loginUserDto: LoginUserDto) {
     return this.authService.login(loginUserDto);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Đăng xuất' })
+  @ApiResponse({ status: 200, description: 'Đăng xuất thành công' })
+  @ApiResponse({
+    status: 401,
+    description: 'Token không hợp lệ',
+  })
+  logout(@Request() req) {
+    const token = req.headers.authorization?.split(' ')[1];
+    return this.authService.logout(token);
   }
 }

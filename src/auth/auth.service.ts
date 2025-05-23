@@ -86,4 +86,19 @@ export class AuthService {
       },
     };
   }
+
+  async logout(token: string) {
+    try {
+      // Xác thực token
+      const decoded = this.jwtService.verify(token);
+      
+      // Trả về thông báo đăng xuất thành công
+      return {
+        success: true,
+        message: 'Đăng xuất thành công'
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Token không hợp lệ');
+    }
+  }
 }
