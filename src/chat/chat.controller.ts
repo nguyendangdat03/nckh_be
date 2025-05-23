@@ -56,4 +56,15 @@ export class ChatController {
   ): Promise<Message> {
     return this.chatService.markMessageAsRead(messageId, req.user.userId);
   }
+
+  @Post('messages')
+  @Roles(Role.ADMIN, Role.ADVISOR, Role.STUDENT)
+  @ApiOperation({ summary: 'Gửi tin nhắn mới' })
+  @ApiResponse({ status: 201, description: 'Gửi tin nhắn thành công', type: Message })
+  async sendMessage(
+    @Request() req,
+    @Body() body: { receiverId: number; content: string },
+  ): Promise<Message> {
+    return this.chatService.createMessage(req.user.userId, body.receiverId, body.content);
+  }
 }
