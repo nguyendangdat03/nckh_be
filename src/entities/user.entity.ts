@@ -4,9 +4,12 @@ import {
   Column,
   CreateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '../auth/roles.enum';
+import { Class } from './class.entity';
 
 @Entity('users')
 export class User {
@@ -35,6 +38,10 @@ export class User {
   class_name: string;
 
   @ApiProperty()
+  @Column({ nullable: true })
+  class_id: number;
+
+  @ApiProperty()
   @Column({ length: 15, nullable: false })
   phone_number: string;
 
@@ -49,4 +56,8 @@ export class User {
   @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
+
+  @ManyToOne(() => Class, classEntity => classEntity.students)
+  @JoinColumn({ name: 'class_id' })
+  class: Class;
 }

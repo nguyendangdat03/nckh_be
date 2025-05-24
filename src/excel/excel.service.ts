@@ -141,8 +141,17 @@ export class ExcelService {
   async getFileData(bucketName: string, objectName: string) {
     const fileBuffer = await this.minioService.getFile(bucketName, objectName);
     const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
+    const sheetNames = workbook.SheetNames;
+    const sheetName = sheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    return XLSX.utils.sheet_to_json(worksheet);
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    
+    return {
+      fileName: objectName,
+      data: jsonData,
+      sheets: sheetNames,
+      currentSheet: sheetName,
+      totalRows: jsonData.length,
+    };
   }
 }

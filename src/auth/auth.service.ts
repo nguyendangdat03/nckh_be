@@ -8,22 +8,25 @@ import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginUserDto } from '../users/dto/login-user.dto';
 import * as bcrypt from 'bcrypt';
+import { Role } from './roles.enum';
+import { AdvisorsService } from '../advisors/advisors.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private advisorsService: AdvisorsService,
   ) {}
 
   async register(createUserDto: CreateUserDto) {
-    // Kiểm tra trùng mã sinh viên
+    // Kiểm tra trùng mã sinh viên/giảng viên
     const existingUsers = await this.usersService.findAll();
     const studentCodeExists = existingUsers.some(
       (user) => user.student_code === createUserDto.student_code,
     );
     if (studentCodeExists) {
-      throw new ConflictException('Mã sinh viên đã tồn tại trong hệ thống');
+      throw new ConflictException('Mã sinh viên/giảng viên đã tồn tại trong hệ thống');
     }
 
     // Kiểm tra trùng email
@@ -44,20 +47,31 @@ export class AuthService {
       password: hashedPassword,
     });
 
+    // Nếu là cố vấn, tạo thêm bản ghi trong bảng advisors
+    if (newUser.role === Role.ADVISOR) {
+      await this.advisorsService.create({
+        user_id: newUser.user_id,
+        advisor_code: newUser.student_code,
+        full_name: newUser.username,
+        department: newUser.class_name,
+        contact_email: newUser.email,
+      });
+    }
+
     // Loại bỏ password trước khi trả về
     const { password, ...result } = newUser;
     return result;
   }
 
   async login(loginUserDto: LoginUserDto) {
-    // Tìm user bằng mã sinh viên
+    // Tìm user bằng mã sinh viên/giảng viên
     const users = await this.usersService.findAll();
     const user = users.find(
       (u) => u.student_code === loginUserDto.student_code,
     );
 
     if (!user) {
-      throw new UnauthorizedException('Mã sinh viên không tồn tại');
+      throw new UnauthorizedException('Mã sinh viên/giảng viên không tồn tại');
     }
 
     // Kiểm tra mật khẩu
@@ -70,8 +84,13 @@ export class AuthService {
       throw new UnauthorizedException('Mật khẩu không chính xác');
     }
 
-    // Tạo jwt token
-    const payload = { sub: user.user_id, username: user.username };
+    // Tạo jwt token với đầy đủ thông tin
+    const payload = { 
+      sub: user.user_id, 
+      username: user.username,
+      userId: user.user_id,
+      role: user.role
+    };
 
     return {
       access_token: this.jwtService.sign(payload),

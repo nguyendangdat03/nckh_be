@@ -3,10 +3,12 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from './user.entity';
+import { Class } from './class.entity';
 
 @Entity('advisors')
 export class Advisor {
@@ -37,4 +39,7 @@ export class Advisor {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @OneToMany(() => Class, classEntity => classEntity.advisor)
+  classes: Class[];
 }

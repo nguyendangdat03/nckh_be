@@ -1,0 +1,515 @@
+{
+	"info": {
+		"_postman_id": "d8f9e5a7-4b5c-4f5e-8d7e-6f5c4b3a2d1e",
+		"name": "NCKH API Collection",
+		"description": "Collection API cho hệ thống quản lý nghiên cứu khoa học",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"student_code\": \"SV001\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Đăng nhập vào hệ thống"
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newstudent\",\n  \"password\": \"password123\",\n  \"email\": \"newstudent@example.com\",\n  \"student_code\": \"SV999\",\n  \"class_name\": \"CNTT1\",\n  \"phone_number\": \"0123456999\",\n  \"role\": \"student\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Đăng ký tài khoản mới"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Đăng xuất khỏi hệ thống"
+					},
+					"response": []
+				}
+			],
+			"description": "API liên quan đến xác thực"
+		},
+		{
+			"name": "Chat Box",
+			"item": [
+				{
+					"name": "Create Chat Box",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"student_id\": 5,\n  \"advisor_id\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/chat/boxes",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"boxes"
+							]
+						},
+						"description": "Tạo box chat mới giữa sinh viên và giảng viên"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chat Boxes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/chat/boxes",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"boxes"
+							]
+						},
+						"description": "Lấy danh sách box chat của người dùng hiện tại"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chat Box Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/chat/boxes/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"boxes",
+								"1"
+							]
+						},
+						"description": "Lấy thông tin chi tiết của một box chat"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chat Box Messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/chat/boxes/1/messages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"boxes",
+								"1",
+								"messages"
+							]
+						},
+						"description": "Lấy danh sách tin nhắn trong một box chat"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Message to Chat Box",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Xin chào, tôi cần hỗ trợ về bài tập\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/chat/boxes/1/messages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"boxes",
+								"1",
+								"messages"
+							]
+						},
+						"description": "Gửi tin nhắn trong một box chat"
+					},
+					"response": []
+				}
+			],
+			"description": "API liên quan đến box chat"
+		},
+		{
+			"name": "Messages",
+			"item": [
+				{
+					"name": "Get Chat History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/chat/messages/2",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"messages",
+								"2"
+							]
+						},
+						"description": "Lấy lịch sử chat với một người dùng"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/chat/unread",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"unread"
+							]
+						},
+						"description": "Lấy danh sách tin nhắn chưa đọc"
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Message as Read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/chat/messages/1/read",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"messages",
+								"1",
+								"read"
+							]
+						},
+						"description": "Đánh dấu tin nhắn đã đọc"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"receiverId\": 2,\n  \"content\": \"Xin chào, tôi cần hỗ trợ\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/chat/messages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chat",
+								"messages"
+							]
+						},
+						"description": "Gửi tin nhắn mới"
+					},
+					"response": []
+				}
+			],
+			"description": "API liên quan đến tin nhắn"
+		},
+		{
+			"name": "Advisors",
+			"item": [
+				{
+					"name": "Get Advisors",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/advisors",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"advisors"
+							]
+						},
+						"description": "Lấy danh sách cố vấn"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Advisor Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/advisors/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"advisors",
+								"profile"
+							]
+						},
+						"description": "Lấy thông tin cố vấn hiện tại"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Advisor Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/advisors/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"advisors",
+								"1"
+							]
+						},
+						"description": "Lấy thông tin chi tiết của một cố vấn"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Advisor Classes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/advisors/1/classes",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"advisors",
+								"1",
+								"classes"
+							]
+						},
+						"description": "Lấy danh sách lớp học của cố vấn"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Advisor Students",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/advisors/1/students",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"advisors",
+								"1",
+								"students"
+							]
+						},
+						"description": "Lấy danh sách sinh viên của cố vấn"
+					},
+					"response": []
+				}
+			],
+			"description": "API liên quan đến cố vấn"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	]
+} 
