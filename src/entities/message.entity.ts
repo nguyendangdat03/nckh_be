@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from './user.entity';
+import { ChatBox } from './chat-box.entity';
 
 @Entity('messages')
 export class Message {
@@ -32,6 +33,15 @@ export class Message {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'receiver_id' })
   receiver: User;
+
+  @ApiProperty()
+  @Column({ nullable: true })
+  chat_box_id: number;
+
+  @ApiProperty()
+  @ManyToOne(() => ChatBox, chatBox => chatBox.messages)
+  @JoinColumn({ name: 'chat_box_id' })
+  chat_box: ChatBox;
 
   @ApiProperty()
   @CreateDateColumn()

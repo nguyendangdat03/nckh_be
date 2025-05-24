@@ -121,9 +121,37 @@ export class ExcelController {
     status: 200,
     description: 'Dữ liệu từ file Excel',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
+      type: 'object',
+      properties: {
+        fileName: {
+          type: 'string',
+          example: 'example.xlsx',
+        },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+          },
+          description: 'Dữ liệu được trích xuất từ sheet đầu tiên',
+        },
+        sheets: {
+          type: 'array',
+          items: {
+            type: 'string',
+          },
+          description: 'Danh sách tên các sheet trong file',
+          example: ['Sheet1', 'Sheet2', 'Sheet3'],
+        },
+        currentSheet: {
+          type: 'string',
+          description: 'Tên sheet hiện tại đang hiển thị dữ liệu',
+          example: 'Sheet1',
+        },
+        totalRows: {
+          type: 'number',
+          description: 'Tổng số dòng dữ liệu',
+          example: 100,
+        },
       },
     },
   })
@@ -133,6 +161,7 @@ export class ExcelController {
   }
 
   @Get(':objectName/sheet')
+  @Roles(Role.ADMIN, Role.ADVISOR, Role.STUDENT)
   @ApiOperation({ summary: 'Lấy dữ liệu từ một sheet cụ thể' })
   @ApiParam({
     name: 'objectName',

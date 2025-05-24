@@ -1,6 +1,7 @@
 import { Controller, Post, Body, HttpException, HttpStatus } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { SendMailDto } from './dto/send-mail.dto';
+import { SendHtmlMailDto } from './dto/send-html-mail.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Mail')
@@ -9,7 +10,7 @@ export class MailController {
   constructor(private readonly mailService: MailService) {}
 
   @Post('send')
-  @ApiOperation({ summary: 'Gửi email' })
+  @ApiOperation({ summary: 'Gửi email sử dụng template' })
   @ApiResponse({
     status: 200,
     description: 'Gửi email thành công',
@@ -64,6 +65,43 @@ export class MailController {
     } catch (error) {
       throw new HttpException(
         error.message || 'Có lỗi xảy ra khi gửi email',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('send-html')
+  @ApiOperation({ summary: 'Gửi email với nội dung HTML trực tiếp' })
+  @ApiResponse({
+    status: 200,
+    description: 'Gửi email thành công',
+    schema: {
+      example: {
+        success: true,
+        message: 'Email HTML đã được gửi thành công',
+        data: {
+          to: 'nguoinhan@example.com',
+          subject: 'Thông báo quan trọng'
+        }
+      }
+    }
+  })
+  async sendHtmlMail(@Body() mailData: SendHtmlMailDto) {
+    try {
+      const result = await this.mailService.sendHtmlMail(
+        mailData.to,
+        mailData.subject,
+        mailData.html,
+      );
+      
+      if (!result.success) {
+        throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
+      }
+      
+      return result;
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Có lỗi xảy ra khi gửi email HTML',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

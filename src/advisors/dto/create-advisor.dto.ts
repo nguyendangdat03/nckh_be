@@ -1,26 +1,30 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsEmail, IsNumber } from "class-validator";
+import { IsNotEmpty, IsEmail, IsNumber, IsOptional } from "class-validator";
 
 export class CreateAdvisorDto {
   @ApiProperty()
   @IsNumber()
-  @IsNotEmpty()
-  user_id: number;
+  @IsOptional()
+  user_id?: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Mã giảng viên/cố vấn' })
   @IsNotEmpty()
   advisor_code: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Họ và tên đầy đủ của cố vấn' })
   @IsNotEmpty()
   full_name: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Khoa/Phòng ban' })
   @IsNotEmpty()
   department: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Email liên hệ' })
   @IsEmail()
   @IsNotEmpty()
   contact_email: string;
+
+  @ApiProperty({ description: 'Số điện thoại liên hệ', required: false })
+  @IsOptional()
+  phone?: string;
 }
