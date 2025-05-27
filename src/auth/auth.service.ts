@@ -41,6 +41,11 @@ export class AuthService {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
 
+    // Đảm bảo class_id là null nếu không được cung cấp hoặc là 0
+    if (!createUserDto.class_id || createUserDto.class_id === 0) {
+      createUserDto.class_id = null;
+    }
+
     // Tạo user mới với mật khẩu đã mã hóa
     const newUser = await this.usersService.create({
       ...createUserDto,

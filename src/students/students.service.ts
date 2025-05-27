@@ -79,7 +79,7 @@ export class StudentsService {
     }
     
     // Kiểm tra lớp học có tồn tại không
-    if (createUserDto.class_id) {
+    if (createUserDto.class_id && createUserDto.class_id > 0) {
       const classEntity = await this.classRepository.findOne({
         where: { class_id: createUserDto.class_id },
       });
@@ -87,6 +87,9 @@ export class StudentsService {
       if (!classEntity) {
         throw new BadRequestException('Lớp học không tồn tại');
       }
+    } else {
+      // Nếu không có lớp học hoặc class_id = 0, đặt thành null
+      createUserDto.class_id = null;
     }
     
     // Mã hóa mật khẩu

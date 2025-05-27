@@ -10,6 +10,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '../auth/roles.enum';
 import { Class } from './class.entity';
+import { Advisor } from './advisor.entity';
 
 @Entity('users')
 export class User {
@@ -34,12 +35,16 @@ export class User {
   student_code: string;
 
   @ApiProperty()
-  @Column({ length: 100, nullable: false })
+  @Column({ length: 100, nullable: true })
   class_name: string;
 
   @ApiProperty()
   @Column({ nullable: true })
-  class_id: number;
+  class_id: number | null;
+
+  @ApiProperty()
+  @Column({ nullable: true })
+  advisor_id: number | null;
 
   @ApiProperty()
   @Column({ length: 15, nullable: false })
@@ -60,4 +65,8 @@ export class User {
   @ManyToOne(() => Class, classEntity => classEntity.students)
   @JoinColumn({ name: 'class_id' })
   class: Class;
+  
+  @ManyToOne(() => Advisor)
+  @JoinColumn({ name: 'advisor_id' })
+  advisor: Advisor;
 }
