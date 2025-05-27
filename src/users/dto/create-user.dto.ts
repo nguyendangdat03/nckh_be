@@ -35,10 +35,10 @@ export class CreateUserDto {
   @IsString()
   class_name: string;
 
-  @ApiProperty({ description: 'ID của lớp học', required: false })
+  @ApiProperty({ description: 'ID của lớp học', required: false, nullable: true })
   @IsOptional()
   @IsNumber()
-  class_id?: number;
+  class_id?: number | null = null;
 
   @ApiProperty()
   @IsNotEmpty()

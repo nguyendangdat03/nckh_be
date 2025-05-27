@@ -1,11 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { MinioService } from '../minio/minio.service';
 import * as XLSX from 'xlsx';
 import { ExcelFile } from './interfaces/excel-file.interface';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ExcelFileEntity } from '../entities/excel-file.entity';
 
 @Injectable()
 export class ExcelService {
-  constructor(private readonly minioService: MinioService) {}
+  constructor(
+    private readonly minioService: MinioService,
+    @InjectRepository(ExcelFileEntity)
+    private readonly excelFileRepository: Repository<ExcelFileEntity>,
+  ) {}
 
   async getAllExcelFiles(bucketName: string) {
     try {
@@ -39,23 +46,55 @@ export class ExcelService {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
-  async processExcelFile(file: Express.Multer.File, bucketName: string) {
+  async processExcelFile(
+    file: Express.Multer.File, 
+    bucketName: string, 
+    semester: number,
+    year: number,
+    description?: string
+  ) {
     const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(worksheet);
 
-    const fileName = `${Date.now()}-${file.originalname}`;
+    const fileName = `${Date.now()}-${semester}-${year}-${file.originalname}`;
     await this.minioService.uploadFile(bucketName, fileName, file.buffer);
+
+    // Lưu thông tin file và kỳ học vào cơ sở dữ liệu
+    const excelFile = this.excelFileRepository.create({
+      file_name: fileName,
+      original_name: file.originalname,
+      bucket_name: bucketName,
+      file_size: file.size,
+      semester: semester,
+      year: year,
+      description: description,
+    });
+
+    await this.excelFileRepository.save(excelFile);
 
     return {
       fileName,
+      originalName: file.originalname,
+      semester,
+      year,
+      description,
       data,
     };
   }
 
   async getExcelData(bucketName: string, objectName: string) {
     try {
+      // Kiểm tra xem file có tồn tại trong cơ sở dữ liệu không
+      const fileInfo = await this.excelFileRepository.findOne({
+        where: { file_name: objectName }
+      });
+
+      if (!fileInfo) {
+        throw new NotFoundException(`File không tồn tại trong cơ sở dữ liệu`);
+      }
+      
       // Download file from MinIO
       const fileBuffer = await this.minioService.getFile(
         bucketName,
@@ -69,6 +108,10 @@ export class ExcelService {
 
       return {
         fileName: objectName,
+        originalName: fileInfo.original_name,
+        semester: fileInfo.semester,
+        year: fileInfo.year,
+        description: fileInfo.description,
         data: jsonData,
         sheets: workbook.SheetNames,
         totalRows: jsonData.length,
@@ -84,6 +127,15 @@ export class ExcelService {
     sheetName: string,
   ) {
     try {
+      // Kiểm tra xem file có tồn tại trong cơ sở dữ liệu không
+      const fileInfo = await this.excelFileRepository.findOne({
+        where: { file_name: objectName }
+      });
+
+      if (!fileInfo) {
+        throw new NotFoundException(`File không tồn tại trong cơ sở dữ liệu`);
+      }
+      
       // Download file from MinIO
       const fileBuffer = await this.minioService.getFile(
         bucketName,
@@ -102,6 +154,10 @@ export class ExcelService {
 
       return {
         fileName: objectName,
+        originalName: fileInfo.original_name,
+        semester: fileInfo.semester,
+        year: fileInfo.year,
+        description: fileInfo.description,
         sheetName: sheetName,
         data: jsonData,
         totalRows: jsonData.length,
@@ -116,6 +172,15 @@ export class ExcelService {
     objectName: string,
     newData: any[],
   ) {
+    // Kiểm tra xem file có tồn tại trong cơ sở dữ liệu không
+    const fileInfo = await this.excelFileRepository.findOne({
+      where: { file_name: objectName }
+    });
+
+    if (!fileInfo) {
+      throw new NotFoundException(`File không tồn tại trong cơ sở dữ liệu`);
+    }
+
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(newData);
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
@@ -125,20 +190,64 @@ export class ExcelService {
   }
 
   async deleteFile(bucketName: string, objectName: string) {
+    // Xóa thông tin file trong cơ sở dữ liệu
+    const fileInfo = await this.excelFileRepository.findOne({
+      where: { file_name: objectName }
+    });
+    
+    if (fileInfo) {
+      await this.excelFileRepository.remove(fileInfo);
+    }
+    
+    // Xóa file khỏi MinIO
     await this.minioService.deleteFile(bucketName, objectName);
     return { message: 'File đã được xóa thành công' };
   }
 
   async listFiles(bucketName: string): Promise<ExcelFile[]> {
-    const files = await this.minioService.listFiles(bucketName);
-    return files.map((file) => ({
-      name: file.name,
-      size: file.size,
-      lastModified: file.lastModified,
+    // Truy vấn dữ liệu từ database thay vì trực tiếp từ MinIO
+    const fileEntities = await this.excelFileRepository.find();
+    
+    return fileEntities.map(entity => ({
+      name: entity.file_name,
+      original_name: entity.original_name,
+      size: entity.file_size,
+      lastModified: entity.uploaded_at,
+      semester: entity.semester,
+      year: entity.year,
+      description: entity.description
+    }));
+  }
+
+  async listFilesBySemester(semester: number, year: number): Promise<ExcelFile[]> {
+    const fileEntities = await this.excelFileRepository.find({
+      where: {
+        semester: semester,
+        year: year
+      }
+    });
+    
+    return fileEntities.map(entity => ({
+      name: entity.file_name,
+      original_name: entity.original_name,
+      size: entity.file_size,
+      lastModified: entity.uploaded_at,
+      semester: entity.semester,
+      year: entity.year,
+      description: entity.description
     }));
   }
 
   async getFileData(bucketName: string, objectName: string) {
+    // Kiểm tra xem file có tồn tại trong cơ sở dữ liệu không
+    const fileInfo = await this.excelFileRepository.findOne({
+      where: { file_name: objectName }
+    });
+
+    if (!fileInfo) {
+      throw new NotFoundException(`File không tồn tại trong cơ sở dữ liệu`);
+    }
+    
     const fileBuffer = await this.minioService.getFile(bucketName, objectName);
     const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
     const sheetNames = workbook.SheetNames;
@@ -148,6 +257,10 @@ export class ExcelService {
     
     return {
       fileName: objectName,
+      originalName: fileInfo.original_name,
+      semester: fileInfo.semester,
+      year: fileInfo.year,
+      description: fileInfo.description,
       data: jsonData,
       sheets: sheetNames,
       currentSheet: sheetName,

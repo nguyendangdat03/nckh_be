@@ -96,7 +96,11 @@ export class ClassesController {
     @Param('id') classId: number,
     @Body() addStudentDto: AddStudentDto,
   ): Promise<User> {
-    return this.classesService.addStudentToClass(classId, addStudentDto.userId);
+    return this.classesService.addStudentToClass(
+      classId, 
+      addStudentDto.userId,
+      addStudentDto.advisorId
+    );
   }
 
   @Delete(':classId/students/:userId')

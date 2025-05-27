@@ -10,6 +10,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExcelService } from './excel.service';
@@ -38,76 +39,90 @@ export class ExcelController {
 
   @Post('upload')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Upload file Excel' })
+  @ApiOperation({ summary: 'Upload file Excel với kỳ học' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
       type: 'object',
+      required: ['file', 'semester', 'year'],
       properties: {
         file: {
           type: 'string',
           format: 'binary',
           description: 'File Excel cần upload (.xlsx)',
         },
-      },
-    },
+        semester: {
+          type: 'integer',
+          description: 'Kỳ học (1, 2, 3...)',
+          example: 1,
+        },
+        year: {
+          type: 'integer',
+          description: 'Năm học',
+          example: 2025,
+        },
+        description: {
+          type: 'string',
+          description: 'Mô tả về file/dữ liệu'
+        },
+      }
+    }
   })
   @ApiResponse({
     status: 200,
     description: 'File đã được upload và xử lý thành công',
-    schema: {
-      type: 'object',
-      properties: {
-        fileName: {
-          type: 'string',
-          example: '1647824937123-example.xlsx',
-        },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-          },
-          description: 'Dữ liệu được trích xuất từ file Excel',
-        },
-      },
-    },
   })
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('semester', ParseIntPipe) semester: number,
+    @Body('year', ParseIntPipe) year: number,
+    @Body('description') description?: string,
+  ) {
     const bucketName = 'excel-bucket';
-    return await this.excelService.processExcelFile(file, bucketName);
+    return await this.excelService.processExcelFile(
+      file, 
+      bucketName, 
+      semester, 
+      year, 
+      description
+    );
   }
 
   @Get()
   @Roles(Role.ADMIN, Role.ADVISOR, Role.STUDENT)
-  @ApiOperation({ summary: 'Lấy danh sách file Excel' })
+  @ApiOperation({ summary: 'Lấy danh sách tất cả file Excel' })
   @ApiResponse({
     status: 200,
     description: 'Danh sách file Excel',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          name: {
-            type: 'string',
-            example: 'example.xlsx',
-          },
-          size: {
-            type: 'number',
-            example: 1024,
-          },
-          lastModified: {
-            type: 'string',
-            example: '2024-03-20T10:00:00Z',
-          },
-        },
-      },
-    },
   })
   async listFiles(): Promise<ExcelFile[]> {
     const bucketName = 'excel-bucket';
     return await this.excelService.listFiles(bucketName);
+  }
+
+  @Get('semester/:semester/year/:year')
+  @Roles(Role.ADMIN, Role.ADVISOR, Role.STUDENT)
+  @ApiOperation({ summary: 'Lấy danh sách file Excel theo kỳ học và năm học' })
+  @ApiParam({
+    name: 'semester',
+    description: 'Kỳ học (1, 2, 3...)',
+    type: 'number',
+  })
+  @ApiParam({
+    name: 'year',
+    description: 'Năm học',
+    type: 'number',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách file Excel theo kỳ học',
+  })
+  async listFilesBySemester(
+    @Param('semester', ParseIntPipe) semester: number,
+    @Param('year', ParseIntPipe) year: number,
+  ): Promise<ExcelFile[]> {
+    return await this.excelService.listFilesBySemester(semester, year);
   }
 
   @Get(':objectName')
@@ -120,40 +135,6 @@ export class ExcelController {
   @ApiResponse({
     status: 200,
     description: 'Dữ liệu từ file Excel',
-    schema: {
-      type: 'object',
-      properties: {
-        fileName: {
-          type: 'string',
-          example: 'example.xlsx',
-        },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-          },
-          description: 'Dữ liệu được trích xuất từ sheet đầu tiên',
-        },
-        sheets: {
-          type: 'array',
-          items: {
-            type: 'string',
-          },
-          description: 'Danh sách tên các sheet trong file',
-          example: ['Sheet1', 'Sheet2', 'Sheet3'],
-        },
-        currentSheet: {
-          type: 'string',
-          description: 'Tên sheet hiện tại đang hiển thị dữ liệu',
-          example: 'Sheet1',
-        },
-        totalRows: {
-          type: 'number',
-          description: 'Tổng số dòng dữ liệu',
-          example: 100,
-        },
-      },
-    },
   })
   async getFileData(@Param('objectName') objectName: string) {
     const bucketName = 'excel-bucket';

@@ -62,7 +62,7 @@ export class ClassesService {
     return classEntity.students;
   }
 
-  async addStudentToClass(classId: number, userId: number): Promise<User> {
+  async addStudentToClass(classId: number, userId: number, advisorId: number): Promise<User> {
     const classEntity = await this.findOne(classId);
     if (!classEntity) {
       throw new NotFoundException(`Class with ID ${classId} not found`);
@@ -78,6 +78,7 @@ export class ClassesService {
     // Cập nhật lớp học cho user
     user.class_id = classId;
     user.class_name = classEntity.class_name;
+    user.advisor_id = advisorId;
     
     return await this.usersRepository.save(user);
   }
@@ -96,8 +97,9 @@ export class ClassesService {
     }
 
     // Xóa lớp học khỏi user
-    user.class_id = 0;
+    user.class_id = null;
     user.class_name = '';
+    user.advisor_id = null;
     
     return await this.usersRepository.save(user);
   }
