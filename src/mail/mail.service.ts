@@ -51,8 +51,22 @@ export class MailService {
       const templateExists = fs.existsSync(templatePath);
       this.logger.log(`Template ${template} tồn tại: ${templateExists}, đường dẫn: ${templatePath}`);
       
+      // Nếu template không tồn tại trong dist, thử sao chép từ src
       if (!templateExists) {
-        throw new Error(`Template ${template} không tồn tại tại đường dẫn ${templatePath}`);
+        const srcTemplatePath = path.join(process.cwd(), 'src', 'mail', 'templates', `${template}.hbs`);
+        if (fs.existsSync(srcTemplatePath)) {
+          // Đảm bảo thư mục templates tồn tại
+          const templateDir = path.join(__dirname, 'templates');
+          if (!fs.existsSync(templateDir)) {
+            fs.mkdirSync(templateDir, { recursive: true });
+          }
+          
+          // Sao chép template từ src sang dist
+          fs.copyFileSync(srcTemplatePath, templatePath);
+          this.logger.log(`Đã sao chép template từ ${srcTemplatePath} sang ${templatePath}`);
+        } else {
+          throw new Error(`Template ${template} không tồn tại tại đường dẫn ${templatePath} và ${srcTemplatePath}`);
+        }
       }
       
       const result = await this.mailerService.sendMail({
