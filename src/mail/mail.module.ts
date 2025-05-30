@@ -5,9 +5,22 @@ import { MailController } from './mail.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { join } from 'path';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '../entities/user.entity';
+import { Advisor } from '../entities/advisor.entity';
+import { Class } from '../entities/class.entity';
+import { ExcelModule } from '../excel/excel.module';
+import * as handlebars from 'handlebars';
+
+// Đăng ký helper function inc trực tiếp với handlebars
+handlebars.registerHelper('inc', function(value) {
+  return parseInt(value) + 1;
+});
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([User, Advisor, Class]),
+    ExcelModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

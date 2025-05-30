@@ -10,5 +10,6 @@ import { UsersModule } from '../users/users.module';
   imports: [MinioModule, TypeOrmModule.forFeature([ExcelFileEntity]), UsersModule],
   controllers: [ExcelController],
   providers: [ExcelService],
+  exports: [ExcelService]
 })
 export class ExcelModule {}

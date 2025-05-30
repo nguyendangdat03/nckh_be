@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +18,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiParam,
 } from '@nestjs/swagger';
 import { StudentsService } from './students.service';
 import { UsersService } from '../users/users.service';
@@ -52,6 +54,47 @@ export class StudentsController {
   @ApiResponse({ status: 200, description: 'Thành công', type: User })
   getProfile(@Request() req): Promise<User> {
     return this.studentsService.findOne(req.user.userId);
+  }
+
+  @Get('check-by-code/:studentCode')
+  @Roles(Role.ADMIN, Role.ADVISOR)
+  @ApiOperation({ summary: 'Kiểm tra thông tin sinh viên bằng mã sinh viên' })
+  @ApiParam({ name: 'studentCode', description: 'Mã sinh viên cần kiểm tra' })
+  @ApiResponse({ status: 200, description: 'Thành công' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy sinh viên' })
+  async checkByStudentCode(@Param('studentCode') studentCode: string) {
+    const student = await this.studentsService.findByStudentCode(studentCode);
+    
+    if (!student) {
+      throw new NotFoundException(`Không tìm thấy sinh viên với mã ${studentCode}`);
+    }
+    
+    // Lấy thông tin lớp
+    const classInfo = student.class_id ? await this.studentsService.getClassInfo(student.class_id) : null;
+    
+    // Lấy thông tin cố vấn học tập
+    const advisor = classInfo?.advisor_id ? await this.studentsService.getAdvisorInfo(classInfo.advisor_id) : null;
+    
+    return {
+      student: {
+        user_id: student.user_id,
+        student_code: student.student_code,
+        name: student.username,
+        email: student.email,
+        class_name: student.class_name,
+        class_id: student.class_id
+      },
+      class: classInfo ? {
+        class_id: classInfo.class_id,
+        class_name: classInfo.class_name,
+        advisor_id: classInfo.advisor_id
+      } : null,
+      advisor: advisor ? {
+        advisor_id: advisor.advisor_id,
+        name: advisor.full_name,
+        email: advisor.contact_email
+      } : null
+    };
   }
 
   @Get(':id')
