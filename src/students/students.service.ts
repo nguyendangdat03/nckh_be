@@ -193,4 +193,27 @@ export class StudentsService {
       relations: ['class'],
     });
   }
+
+  async findByStudentCode(studentCode: string): Promise<User | null> {
+    return await this.usersRepository.findOne({
+      where: { 
+        student_code: studentCode,
+        role: Role.STUDENT
+      },
+      relations: ['class'],
+    });
+  }
+  
+  async getClassInfo(classId: number): Promise<Class | null> {
+    return await this.classRepository.findOne({
+      where: { class_id: classId },
+      relations: ['advisor'],
+    });
+  }
+  
+  async getAdvisorInfo(advisorId: number): Promise<Advisor | null> {
+    return await this.advisorRepository.findOne({
+      where: { advisor_id: advisorId },
+    });
+  }
 } 

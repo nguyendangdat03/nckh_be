@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Thông báo sinh viên bị cảnh báo học tập</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #337ab7;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            background-color: white;
+            padding: 20px;
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+        }
+        .info-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .student-list {
+            margin: 20px 0;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .student-list th, .student-list td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .student-list th {
+            background-color: #f2f2f2;
+        }
+        .student-list tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .student-list tr:hover {
+            background-color: #f5f5f5;
+        }
+        .footer {
+            background-color: #f5f5f5;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
+        .button {
+            display: inline-block;
+            background-color: #5bc0de;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="info-icon">📊</div>
+            <h1>THÔNG BÁO SINH VIÊN BỊ CẢNH BÁO HỌC TẬP</h1>
+        </div>
+        <div class="content">
+            <p>Kính gửi <strong>{{advisor_name}}</strong>,</p>
+            
+            <p>Chúng tôi gửi thông báo này để thông báo rằng có <strong>{{warning_count}} sinh viên</strong> thuộc lớp <strong>{{class_name}}</strong> mà quý thầy/cô đang quản lý bị cảnh báo học tập trong kỳ {{semester}}/{{year}}.</p>
+            
+            <p>Danh sách sinh viên bị cảnh báo:</p>
+            
+            <table class="student-list">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã SV</th>
+                        <th>Họ và tên</th>
+                        <th>Điểm TB</th>
+                        <th>Lý do cảnh báo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each students}}
+                    <tr>
+                        <td>{{inc @index}}</td>
+                        <td>{{this.student_code}}</td>
+                        <td>{{this.student_name}}</td>
+                        <td>{{this.gpa}}</td>
+                        <td>{{this.reason}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            
+            <p>Kính mong quý thầy/cô liên hệ với các sinh viên này để có biện pháp hỗ trợ kịp thời.</p>
+            
+            <a href="#" class="button">Xem chi tiết</a>
+        </div>
+        <div class="footer">
+            <p>Email này được gửi tự động. Vui lòng không trả lời email này.</p>
+            <p>© {{current_year}} Hệ thống quản lý đào tạo. Mọi quyền được bảo lưu.</p>
+        </div>
+    </div>
+</body>
+</html> 

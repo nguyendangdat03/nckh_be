@@ -267,4 +267,76 @@ export class ExcelService {
       totalRows: jsonData.length,
     };
   }
+
+  async analyzeAcademicWarnings(bucketName: string, objectName: string, threshold = 2.0) {
+    try {
+      // Kiểm tra xem file có tồn tại trong cơ sở dữ liệu không
+      const fileInfo = await this.excelFileRepository.findOne({
+        where: { file_name: objectName }
+      });
+
+      if (!fileInfo) {
+        throw new Error(`File không tồn tại trong cơ sở dữ liệu`);
+      }
+      
+      // Download file from MinIO
+      const fileBuffer = await this.minioService.getFile(
+        bucketName,
+        objectName,
+      );
+
+      // Convert Excel to JSON
+      const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      // Phân tích dữ liệu để tìm sinh viên bị cảnh báo học tập
+      const warnings: Array<{
+        student_code: string;
+        student_name: string;
+        class_name: string;
+        gpa: number | string;
+        reason: string;
+      }> = [];
+      
+      const studentCodes: string[] = [];
+      
+      for (const row of jsonData) {
+        const rowData = row as Record<string, any>;
+        // Kiểm tra các trường bắt buộc
+        if (!rowData['Mã sinh viên'] || !rowData['Họ và tên'] || !rowData['Lớp']) {
+          continue;
+        }
+        
+        // Chuẩn bị dữ liệu sinh viên
+        const studentData = {
+          student_code: rowData['Mã sinh viên'] as string,
+          student_name: rowData['Họ và tên'] as string,
+          class_name: rowData['Lớp'] as string,
+          gpa: rowData['Điểm TB'] || rowData['Điểm trung bình'] || rowData['GPA'] || 0,
+          reason: ''
+        };
+        
+        // Kiểm tra điều kiện cảnh báo học tập
+        if (parseFloat(studentData.gpa.toString()) < threshold) {
+          studentData.reason = `Điểm trung bình dưới ${threshold}`;
+          warnings.push(studentData);
+          studentCodes.push(studentData.student_code);
+        }
+      }
+
+      return {
+        fileName: objectName,
+        originalName: fileInfo.original_name,
+        semester: fileInfo.semester,
+        year: fileInfo.year,
+        totalStudents: jsonData.length,
+        warningCount: warnings.length,
+        warnings: warnings,
+        studentCodes: studentCodes
+      };
+    } catch (error) {
+      throw new Error(`Lỗi khi phân tích dữ liệu cảnh báo học tập: ${error.message}`);
+    }
+  }
 }
